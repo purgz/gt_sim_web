@@ -17,5 +17,8 @@ egt-platform/
 └── .github/workflows/
     └── ci.yml
 
+To see the dev database
+docker compose up -d
+docker exec -it gt_sim_web-db-1 psql -U egt -d egt
 
 ![alt text](image.png)
