@@ -16,3 +16,24 @@ services:
     env_file: .env
     environment:
       SIM_INTERNAL_TOKEN: ${SIM_INTERNAL_TOKEN}
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    env_file: .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes:
+      - miniodata:/data
+
+volumes:
+  miniodata:
