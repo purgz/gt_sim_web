@@ -1,0 +1,76 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    env_file: .env.prod
+    environment:
+      POSTGRES_DB: egt
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - internal
+
+  minio:
+    image: minio/minio
+    restart: always
+    command: server /data --console-address ":9001"
+    env_file: .env.prod
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes:
+      - miniodata:/data
+    networks:
+      - internal
+
+  sim-service:
+    build: ./sim_service
+    restart: always
+    env_file: .env.prod
+    environment:
+      SIM_INTERNAL_TOKEN: ${SIM_INTERNAL_TOKEN}
+    networks:
+      - internal
+
+  backend:
+    build: ./backend/egt-api
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file: .env.prod
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SIM_INTERNAL_TOKEN: ${SIM_INTERNAL_TOKEN}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/egt
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SIM_SERVICE_URL: http://sim-service:8000
+      MINIO_URL: http://minio:9000
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - db
+      - redis
+      - minio
+      - sim-service
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:
+  miniodata:

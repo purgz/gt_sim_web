@@ -10,6 +10,7 @@ backend/target/
 # Environment / secrets
 .env
 *.env
+.env.prod
 
 # Python
 __pycache__/
