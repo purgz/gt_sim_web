@@ -22,6 +22,6 @@ jobs:
           script: |
             cd ~/gt_sim_web
             git pull origin main
-            docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose-prod.yml build
+            docker compose -f docker-compose-prod.yml up -d --remove-orphans
             docker image prune -f
