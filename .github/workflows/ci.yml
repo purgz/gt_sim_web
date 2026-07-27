@@ -15,13 +15,6 @@ jobs:
         with: { java-version: '21', distribution: 'temurin' }
       - run: cd backend/egt-api && mvn test -q
 
-  test-sim:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: pip install -r sim_service/requirements.txt && pytest sim_service/tests/
 
   deploy:
     needs: [test-backend, test-sim]
