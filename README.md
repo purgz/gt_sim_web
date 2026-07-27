@@ -22,3 +22,14 @@ docker compose up -d
 docker exec -it gt_sim_web-db-1 psql -U egt -d egt
 
 ![alt text](image.png)
+
+
+
+redis:
+docker exec -it gt_sim_web-redis-1 redis-cli
+KEYS *
+GET sim:<hash>
+TTL sim:<hash>
+
+minio:
+http://localhost:9001
