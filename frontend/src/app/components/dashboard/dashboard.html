@@ -1,0 +1,163 @@
+<div class="dashboard">
+
+  <header>
+    <h1>EGT Simulation Lab</h1>
+
+    <div class="user-info" *ngIf="user$ | async as user">
+      <span>{{ user.email }}</span>
+
+      <span class="role" *ngFor="let role of user.roles">
+        {{ role }}
+      </span>
+
+      <button class="logout" (click)="logout()">
+        Logout
+      </button>
+    </div>
+  </header>
+
+
+  <main>
+
+    <!-- Service Health -->
+    <section class="card">
+
+      <h2>Service Status</h2>
+
+      <button
+        (click)="checkHealth()"
+        [disabled]="healthLoading()">
+
+        {{ healthLoading() ? 'Checking...' : 'Check Sim Service' }}
+
+      </button>
+
+
+      <div class="result" *ngIf="health()">
+
+        <ng-container *ngIf="!health().error; else healthError">
+
+          <span
+            [class]="health().sim_service_available ? 'up' : 'down'">
+
+            Sim service:
+            {{ health().sim_service_available ? 'Online' : 'Offline' }}
+
+          </span>
+
+        </ng-container>
+
+
+        <ng-template #healthError>
+
+          <span class="down">
+            {{ health().error }}
+          </span>
+
+        </ng-template>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- Saved Simulations -->
+    <section class="card">
+
+      <h2>Saved Simulations</h2>
+
+
+      <button
+        (click)="loadSaved()"
+        [disabled]="savedLoading()">
+
+        {{ savedLoading() ? 'Loading...' : 'Refresh' }}
+
+      </button>
+
+
+      <div
+        class="empty"
+        *ngIf="!savedLoading() && savedSims().length === 0">
+
+        No simulations saved yet.
+
+      </div>
+
+
+      <table *ngIf="savedSims().length > 0">
+
+        <thead>
+          <tr>
+            <th>Process</th>
+            <th>Pop size</th>
+            <th>w</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+
+
+        <tbody>
+
+          <tr *ngFor="let s of savedSims()">
+
+            <td>{{ s.process }}</td>
+
+            <td>{{ s.pop_size }}</td>
+
+            <td>{{ s.w }}</td>
+
+            <td>
+              {{ s.created_at | date:'short' }}
+            </td>
+
+
+            <td>
+              <button
+                class="small"
+                (click)="viewSim(s.id)">
+
+                View
+
+              </button>
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+
+    </section>
+
+
+
+    <!-- Simulation Details -->
+    <section
+      class="card"
+      *ngIf="selectedLoading() || selectedSim()">
+
+
+      <h2>Simulation Result</h2>
+
+
+      <div *ngIf="selectedLoading()">
+        Loading...
+      </div>
+
+
+      <pre *ngIf="!selectedLoading()">
+{{ selectedSim() | json }}
+      </pre>
+
+
+    </section>
+
+
+  </main>
+
+</div>
+

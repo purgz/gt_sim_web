@@ -35,5 +35,6 @@ services:
     volumes:
       - miniodata:/data
 
+
 volumes:
   miniodata:
