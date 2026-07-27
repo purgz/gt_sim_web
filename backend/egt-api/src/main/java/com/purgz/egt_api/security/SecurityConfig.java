@@ -49,7 +49,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200"
+                "http://localhost:4200", // dev
+                "http://localhost",
+                "http://localhost:80",
+                "http://gt_web.henrybrooks.uk"
         ));
 
         configuration.setAllowedMethods(List.of(

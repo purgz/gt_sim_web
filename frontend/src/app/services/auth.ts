@@ -22,6 +22,10 @@ export class Auth {
     private router = inject(Router);
 
     login(email: string, password: string) {
+        console.log("Environment API URL:", this.base); // Debugging line to check the base URL
+        console.log(environment.production);
+
+        
         return this.http.post<AuthResponse>(`${this.base}/auth/login`, { email, password })
         .pipe(tap(res => {
             localStorage.setItem(this.tokenKey, res.token);
