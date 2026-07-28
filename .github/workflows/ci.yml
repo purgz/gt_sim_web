@@ -147,6 +147,8 @@ jobs:
             
             # Stop and remove old containers
             docker compose -f docker-compose-prod.yml down --remove-orphans
+
+            docker container prune -f
             
             # Start new containers
             docker compose -f docker-compose-prod.yml up -d --remove-orphans
