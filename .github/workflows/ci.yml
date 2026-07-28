@@ -1,27 +1,187 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
+  test-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+      - run: cd backend/egt-api && mvn test -q
+
+  test-sim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r sim_service/requirements.txt && pytest sim_service/tests/
+
+  build-backend:
+    needs: test-backend
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/egt-api/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+      
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/egt-api
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-frontend:
+    needs: test-backend
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+      
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-sim:
+    needs: test-sim
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('sim_service/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+      
+      - name: Build and push sim-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sim_service
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-sim:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/egt-sim:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [build-backend, build-frontend, build-sim]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # We need the docker-compose-prod.yml file
+      - uses: actions/checkout@v4
+      
       - name: Deploy to Oracle VM
         uses: appleboy/ssh-action@v1
+        timeout-minutes: 10
         with:
           host: ${{ secrets.ORACLE_HOST }}
           username: ubuntu
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
             cd ~/gt_sim_web
-            git pull origin main
-            docker compose -f docker-compose-prod.yml build
+            
+            # Make sure docker-compose-prod.yml exists
+            if [ ! -f docker-compose-prod.yml ]; then
+              echo "Error: docker-compose-prod.yml not found!"
+              exit 1
+            fi
+            
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            
+            # Pull the latest images
+            docker compose -f docker-compose-prod.yml pull
+            
+            # Stop and remove old containers
+            docker compose -f docker-compose-prod.yml down --remove-orphans
+            
+            # Start new containers
             docker compose -f docker-compose-prod.yml up -d --remove-orphans
+            
+            # Wait for services to be healthy (optional)
+            sleep 10
+            
+            # Check if containers are running
+            docker compose -f docker-compose-prod.yml ps
+            
+            # Clean up unused images
             docker image prune -f
+            
+            # Clean up unused volumes (optional - be careful!)
+            # docker volume prune -f
+            
+            echo "Deployment completed successfully!"
