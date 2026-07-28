@@ -52,7 +52,7 @@ public class SecurityConfig {
                 "http://localhost:4200", // dev
                 "http://localhost",
                 "http://localhost:80",
-                "http://gt_web.henrybrooks.uk"
+                "http://gtweb.henrybrooks.uk"
         ));
 
         configuration.setAllowedMethods(List.of(
