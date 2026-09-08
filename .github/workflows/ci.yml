@@ -12,6 +12,46 @@ env:
 
 jobs:
 
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/egt-api/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Run backend tests
+        working-directory: backend/egt-api
+        run: ./mvnw -B test
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test -- --watch=false
 
   build-backend:
     if: github.ref == 'refs/heads/main'
@@ -19,23 +59,23 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('backend/egt-api/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-      
+
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
@@ -53,23 +93,23 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: ${{ runner.os }}-npm-
-      
+
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
@@ -87,23 +127,23 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('sim_service/requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-
-      
+
       - name: Build and push sim-service
         uses: docker/build-push-action@v5
         with:
@@ -116,13 +156,13 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [build-backend, build-frontend, build-sim]
+    needs: [test, build-backend, build-frontend, build-sim]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       # We need the docker-compose-prod.yml file
       - uses: actions/checkout@v4
-      
+
       - name: Deploy to Oracle VM
         uses: appleboy/ssh-action@v1
         timeout-minutes: 10
