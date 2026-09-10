@@ -135,6 +135,21 @@
 
 
 
+    <!-- Run Simulation (admin only) -->
+    <section class="card" *ngIf="isAdmin(); else adminRequired">
+
+      <app-run-sim></app-run-sim>
+
+    </section>
+
+    <ng-template #adminRequired>
+      <section class="card">
+        <h2>Run Simulation</h2>
+        <span class="empty">Admin access required to run simulations.</span>
+      </section>
+    </ng-template>
+
+
     <!-- Simulation Details -->
     <section
       class="card"

@@ -2,11 +2,12 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Auth } from '../../services/auth';
 import { Sim } from '../../services/sim';
+import { RunSim } from '../run-sim/run-sim';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RunSim],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -29,6 +30,10 @@ export class Dashboard implements OnInit {
 
   ngOnInit() {
     this.loadSaved();
+  }
+
+  isAdmin() {
+    return this.auth.isAdmin();
   }
 
 

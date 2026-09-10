@@ -1,0 +1,154 @@
+<div class="run-sim">
+
+  <h2>Run Simulation</h2>
+
+  <div class="row">
+
+    <div class="field">
+      <label>Process</label>
+      <select [ngModel]="process()" (ngModelChange)="process.set($event)">
+        <option *ngFor="let p of processes" [ngValue]="p">{{ p }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Population size</label>
+      <input type="number" [(ngModel)]="popSize" min="2"/>
+    </div>
+
+    <div class="field">
+      <label>Iterations</label>
+      <input type="number" [(ngModel)]="iterations" min="1"/>
+    </div>
+
+  </div>
+
+
+  <div class="row">
+
+    <div class="field">
+      <label>Simulations</label>
+      <input type="number" [(ngModel)]="simulations" min="1"/>
+    </div>
+
+    <div class="field">
+      <label>Selection strength (w)</label>
+      <input type="number" [(ngModel)]="w" min="0" max="1" step="0.05"/>
+    </div>
+
+  </div>
+
+
+  <div class="matrix">
+
+    <div class="matrix-header">
+
+      <label>Payoff matrix (row = strategy i, column = strategy j)</label>
+
+      <button
+        class="small"
+        type="button"
+        (click)="resetMatrix()">
+
+        Reset to RPS
+
+      </button>
+
+    </div>
+
+    <div class="grid">
+
+      <ng-container *ngFor="let row of matrix; let i = index">
+
+        <ng-container *ngFor="let cell of row; let j = index">
+
+          <input
+            class="cell"
+            type="number"
+            step="any"
+            [ngModel]="matrix[i][j]"
+            (ngModelChange)="setCell(i, j, $event)"/>
+
+        </ng-container>
+
+      </ng-container>
+
+    </div>
+
+  </div>
+
+
+  <div class="toggles">
+
+    <label>
+      <input type="checkbox" [ngModel]="traj()" (ngModelChange)="traj.set($event)"/>
+      Return trajectories
+    </label>
+
+    <label>
+      <input type="checkbox" [ngModel]="pointCloud()" (ngModelChange)="pointCloud.set($event)"/>
+      Return point cloud
+    </label>
+
+    <label>
+      <input type="checkbox" [ngModel]="initialRand()" (ngModelChange)="setInitialRand($event)"/>
+      Random initial state
+    </label>
+
+    <label>
+      <input type="checkbox" [ngModel]="useInitialDist()" (ngModelChange)="toggleUseInitialDist($event)"/>
+      Specify initial distribution
+    </label>
+
+  </div>
+
+
+  <div class="dist field" *ngIf="useInitialDist()">
+
+    <label>Initial distribution (one value per strategy, comma-separated)</label>
+
+    <input
+      type="text"
+      placeholder="0.25, 0.25, 0.25, 0.25"
+      [ngModel]="initialDist()"
+      (ngModelChange)="setInitialDist($event)"/>
+
+    <span class="dist-error" *ngIf="!distComplete()">
+      Please enter 4 comma-separated numbers, e.g. 0.25, 0.25, 0.25, 0.25
+    </span>
+
+  </div>
+
+
+  <button
+    (click)="run()"
+    [disabled]="running() || !matrixComplete() || !distComplete()">
+
+    {{ running() ? 'Running... may take minutes' : 'Run' }}
+
+  </button>
+
+
+  <div class="result" *ngIf="running()">
+    Running simulation — this can take a while for larger populations...
+  </div>
+
+
+  <div class="error" *ngIf="error()">
+    {{ error() }}
+  </div>
+
+
+  <div class="result" *ngIf="result()">
+
+    <span class="source">
+      Source: {{ result().source }}
+    </span>
+
+    <pre>
+{{ result() | json }}
+    </pre>
+
+  </div>
+
+</div>
