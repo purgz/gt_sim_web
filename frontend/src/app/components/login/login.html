@@ -13,10 +13,10 @@
       <input type="password" [(ngModel)]="password" placeholder="Password"/>
     </div>
 
-    <div class="error" *ngIf="error">{{ error }}</div>
+    <div class="error" *ngIf="error()">{{ error() }}</div>
 
-    <button (click)="login()" [disabled]="loading">
-      {{ loading ? 'Logging in...' : 'Login' }}
+    <button (click)="login()" [disabled]="loading()">
+      {{ loading() ? 'Logging in...' : 'Login' }}
     </button>
   </div>
 </div>

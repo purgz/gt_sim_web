@@ -2,11 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Auth } from '../../services/auth';
 import { Sim } from '../../services/sim';
+import { RunSim } from '../run-sim/run-sim';
+import { PlotView } from '../plot-view/plot-view';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RunSim, PlotView],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -26,9 +28,15 @@ export class Dashboard implements OnInit {
   selectedSim = signal<any>(null);
   selectedLoading = signal(false);
 
+  resultView = signal<'json' | 'plot'>('json');
+
 
   ngOnInit() {
     this.loadSaved();
+  }
+
+  isAdmin() {
+    return this.auth.isAdmin();
   }
 
 
@@ -74,6 +82,7 @@ export class Dashboard implements OnInit {
   viewSim(id: string) {
     this.selectedLoading.set(true);
     this.selectedSim.set(null);
+    this.resultView.set('json');
 
     this.sim.getSavedSimulation(id).subscribe({
       next: res => {
@@ -95,6 +104,46 @@ export class Dashboard implements OnInit {
 
   logout() {
     this.auth.logout();
+  }
+
+
+  plotSim(id: string) {
+    this.selectedLoading.set(true);
+    this.selectedSim.set(null);
+    this.resultView.set('plot');
+
+    this.sim.getSavedSimulation(id).subscribe({
+      next: res => {
+        this.selectedSim.set(res);
+        this.selectedLoading.set(false);
+      },
+      error: err => {
+        console.error('Loading simulation for plot failed:', err);
+
+        this.selectedSim.set({
+          error: 'Could not load simulation'
+        });
+
+        this.selectedLoading.set(false);
+      }
+    });
+  }
+
+
+  showJsonView() {
+    this.resultView.set('json');
+  }
+
+
+  showPlotView() {
+    this.resultView.set('plot');
+  }
+
+
+  onFreshResult(res: any) {
+    this.selectedSim.set(res);
+    this.selectedLoading.set(false);
+    this.resultView.set('plot');
   }
 }
 
