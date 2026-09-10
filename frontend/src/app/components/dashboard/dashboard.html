@@ -122,6 +122,14 @@
                 View
 
               </button>
+
+              <button
+                class="small"
+                (click)="plotSim(s.id)">
+
+                Plot
+
+              </button>
             </td>
 
           </tr>
@@ -138,7 +146,7 @@
     <!-- Run Simulation (admin only) -->
     <section class="card" *ngIf="isAdmin(); else adminRequired">
 
-      <app-run-sim></app-run-sim>
+      <app-run-sim (resultReady)="onFreshResult($event)"></app-run-sim>
 
     </section>
 
@@ -156,7 +164,12 @@
       *ngIf="selectedLoading() || selectedSim()">
 
 
-      <h2>Simulation Result</h2>
+      <h2>Simulation Result
+        <span class="view-toggle" *ngIf="selectedSim()">
+          <button class="small" [class.active]="resultView() === 'json'" (click)="showJsonView()">JSON</button>
+          <button class="small" [class.active]="resultView() === 'plot'" (click)="showPlotView()">Plot</button>
+        </span>
+      </h2>
 
 
       <div *ngIf="selectedLoading()">
@@ -164,9 +177,23 @@
       </div>
 
 
-      <pre *ngIf="!selectedLoading()">
+      <ng-container *ngIf="!selectedLoading() && selectedSim()">
+
+        <div class="error-text" *ngIf="selectedSim().error">
+          {{ selectedSim().error }}
+        </div>
+
+        <ng-container *ngIf="!selectedSim().error">
+
+          <app-plot-view class="plot-wrapper" [result]="selectedSim()" *ngIf="resultView() === 'plot'"></app-plot-view>
+
+          <pre *ngIf="resultView() === 'json'">
 {{ selectedSim() | json }}
-      </pre>
+          </pre>
+
+        </ng-container>
+
+      </ng-container>
 
 
     </section>

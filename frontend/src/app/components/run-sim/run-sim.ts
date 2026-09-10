@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal } from '@angular/core';
+﻿import { Component, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Sim } from '../../services/sim';
@@ -48,6 +48,8 @@ export class RunSim {
   running = signal(false);
   result = signal<any>(null);
   error = signal('');
+
+  resultReady = output<any>();
 
   setCell(row: number, col: number, value: string) {
     this.matrix[row][col] = Number(value);
@@ -119,6 +121,7 @@ export class RunSim {
       next: res => {
         this.result.set(res);
         this.running.set(false);
+        this.resultReady.emit(res);
       },
       error: err => {
         this.error.set(err.status ? `Run failed: HTTP ${err.status}` : 'Run failed: service unreachable');

@@ -1,0 +1,16 @@
+<div class="plot-view">
+
+  @if (hasTrajectory()) {
+
+    <div #plotDiv class="plot-div"></div>
+
+  } @else {
+
+    <div class="empty">
+      This result has no trajectory data.
+      Re-run with "Return trajectories" enabled to plot population fractions.
+    </div>
+
+  }
+
+</div>

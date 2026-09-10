@@ -97,3 +97,27 @@ pre {
   font-size: 0.75rem;
   max-height: 400px;
 }
+
+h2 {
+  .view-toggle {
+    float: right;
+
+    button.small {
+      background: #eee;
+      color: #333;
+      opacity: 0.8;
+
+      &.active { background: #4a90e2; color: white; opacity: 1; }
+      &:hover:not(.active) { background: #ddd; }
+    }
+  }
+}
+
+.error-text {
+  color: #e74c3c;
+  font-size: 0.875rem;
+}
+
+.plot-wrapper {
+  display: block;
+}
